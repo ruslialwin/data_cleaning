@@ -30,10 +30,10 @@ if uploaded_files:
             # tambah prolab_ di depan nama file dan hapus _cleaned
             file_name = "prolab_" + file_name.replace("_cleaned.xlsx", "").replace(".xlsx", "")
 
-            # 2) Mengambil data yang tidak mengandung kata "Peny" pada kolom "Rincian Deskripsi"
+            # 3) Mengambil data yang tidak mengandung kata "Peny" pada kolom "Rincian Deskripsi"
             df_realisasi = df_realisasi[~df_realisasi["Rincian Deskripsi"].str.contains("Peny", case=False, na=False)]
 
-            # 3) Mengambil data yang memiliki nilai "Deskripsi" sesuai dengan daftar yang diberikan
+            # 4) Mengambil data yang memiliki nilai "Deskripsi" sesuai dengan daftar yang diberikan
             df_filtered = df_realisasi[
                 df_realisasi["Deskripsi"].isin([
                     "Biaya Gaji",
@@ -42,7 +42,7 @@ if uploaded_files:
                 ])
             ]
 
-            # 4) Menambahkan kolom "Tipe" berdasarkan nilai pada kolom "Deskripsi"
+            # 5) Menambahkan kolom "Tipe" berdasarkan nilai pada kolom "Deskripsi"
             mapping = {
                 "Biaya Gaji": "Labour Cost",
                 "Beban Administrasi": "Labour Cost",
