@@ -4,7 +4,10 @@ import numpy as np
 import re
 from io import BytesIO
 
-st.title("Cleaning Processing & Labour")
+st.title("Cleaning Processing & Labour") 
+
+
+st.write("*Processing & Labour* : data realisasi hanya biaya gaji, overhead dan beban administrasi (exclude biaya penyusutan) dengan penambahan kolom tipe. File yang diupload harus **file realisasi yang telah di-cleaned** dengan struktur: **:green[perusahaan_periode_cleaned]**, contoh: **:green[bimp_des25_cleaned.xlsx]**")
 
 uploaded_files = st.file_uploader("Upload File Realisasi yang telah di-cleaned (Excel)", type=['xlsx'], accept_multiple_files=True)
 
@@ -13,14 +16,19 @@ if not uploaded_files:
 
 if uploaded_files:
     df_list = []
-    
-    file_name_input = st.text_input("Masukkan nama file hasil (tanpa .xlsx)", placeholder="prolab_bimp_jul25")
+
     pd.set_option("display.max_columns", None)
 
     with st.spinner("Sedang memproses..."):
         for uploaded_file in uploaded_files:
             # 1) Buka file Excel
             df_realisasi = pd.read_excel(uploaded_file)
+
+            # 2) Mengambil nama file untuk digunakan sebagai nama file hasil download
+            file_name = uploaded_file.name  # contoh: bimp_des25_cleaned.xlsx
+
+            # tambah prolab_ di depan nama file dan hapus _cleaned
+            file_name = "prolab_" + file_name.replace("_cleaned.xlsx", "").replace(".xlsx", "")
 
             # 2) Mengambil data yang tidak mengandung kata "Peny" pada kolom "Rincian Deskripsi"
             df_realisasi = df_realisasi[~df_realisasi["Rincian Deskripsi"].str.contains("Peny", case=False, na=False)]
@@ -72,11 +80,13 @@ if uploaded_files:
 
             col_idx = df_final_all.columns.get_loc("Realisasi Biaya")
             worksheet.set_column(col_idx, col_idx, 18, format_angka)
-        
+
         st.download_button(
-            label="Download Hasil",
+            label=f"Download {file_name}.xlsx",
             data=output.getvalue(),
-            file_name=f"{file_name_input}.xlsx",
+            file_name=f"{file_name}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="download_processing_labour"
+            key="download_processing_labour",
+            icon=":material/download:",
+            type="primary"
         )
