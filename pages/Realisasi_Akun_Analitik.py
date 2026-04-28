@@ -6,6 +6,8 @@ from io import BytesIO
 
 st.title("Cleaning Item Jurnal")
 
+st.write("*Realisasi Akun Analitik* : data **artikel jurnal** dari modul Accounting. File yang diupload harus dalam format Excel (.xlsx) dengan struktur: **:green[Item Jurnal (account.move.line) (perusahaan_periode).xlsx]**, contoh: **:green[Item Jurnal (account.move.line) (bimp_des25).xlsx]**")
+
 uploaded_files = st.file_uploader("Upload File Item Jurnal (Excel)", type=['xlsx'], accept_multiple_files=True)
 
 if not uploaded_files:
@@ -13,8 +15,8 @@ if not uploaded_files:
 
 if uploaded_files:
     df_list = []
+    periode_list = []
     
-    file_name_input = st.text_input("Masukkan nama file hasil (tanpa .xlsx)", placeholder="item_jurnal_bimp_jul25_cleaned")
     pd.set_option("display.max_columns", None)
 
     with st.spinner("Sedang memproses..."):
@@ -22,18 +24,31 @@ if uploaded_files:
             # 1) Buka file Excel
             df_raw = pd.read_excel(uploaded_file)
 
-            # 2) Ambil hanya baris transaksi yang punya tanggal valid
+            # 2) Ambil nama file untuk digunakan sebagai nama file hasil download
+            file_name = uploaded_file.name  # contoh: Item Jurnal (account.move.line) (bimp_des25).xlsx
+            file_name = file_name.replace(".xlsx", "").lower()  
+            file_name = file_name.replace("item jurnal (account.move.line) (", "item_jurnal_").replace(")", "").replace(" ", "_")
+
+            parts = file_name.split("_")  # ["item", "jurnal", "bimp", "des25"]
+            prefix = "_".join(parts[:-1])
+
+            # ambil bagian terakhir (des25)
+            last = parts[-1]
+
+            periode_list.append(last)
+
+            # 3) Ambil hanya baris transaksi yang punya tanggal valid
             df = df_raw.copy()
             df["Tanggal"] = pd.to_datetime(df["Tanggal"], errors="coerce")
             df = df[df["Tanggal"].notna()].copy()
 
-            # 3) Pisah kolom Akun -> No Akun + Nama Akun
+            # 4) Pisah kolom Akun -> No Akun + Nama Akun
             akun_split = df["Akun"].astype(str).str.extract(r"^\s*(?P<No_Akun>\S+)\s*(?P<Nama_Akun>.*)$")
 
             df["No Akun"] = akun_split["No_Akun"].replace("nan", np.nan)
             df["Nama Akun"] = akun_split["Nama_Akun"].replace("nan", np.nan).str.strip()
 
-            # 4) Pisah kolom Akun Analitik
+            # 5) Pisah kolom Akun Analitik
             analitik = df["Akun Analitik"].astype(str).replace("nan", np.nan)
 
             kode_analitik = analitik.str.extract(r"^\[(?P<No_Akun_Analitik>[^\]]+)\]")
@@ -90,7 +105,7 @@ if uploaded_files:
             df["Kode Detail Analitik"] = df["Kode Detail Analitik"].fillna("UNDEFINED")
             df["Tipe Unit"] = df["Tipe Unit"].fillna("UNDEFINED")
 
-            # 5) Buat kolom Nominal
+            # 6) Buat kolom Nominal
             # Debit tetap positif
             # Kredit menjadi negatif
             df["Debit"] = pd.to_numeric(df["Debit"], errors="coerce").fillna(0)
@@ -98,11 +113,11 @@ if uploaded_files:
 
             df["Nominal"] = df["Debit"] - df["Kredit"]
 
-            # 6. Filter No Akun yang tidak diinginkan (01, 04, 11, dll sesuai notebook)
+            # 7) Filter No Akun yang tidak diinginkan (01, 04, 11, dll sesuai notebook)
             remove_prefixes = ("01", "04", "11", "12", "21", "22", "31", "32", "34", "91", "92", "99")
             df = df[~df["No Akun"].fillna("").str.startswith(remove_prefixes)].copy()
 
-            # 7) Tambah Tahun dan Bulan
+            # 8) Tambah Tahun dan Bulan
             bulan_map = {
                 1: "Januari", 2: "Februari", 3: "Maret", 4: "April",
                 5: "Mei", 6: "Juni", 7: "Juli", 8: "Agustus",
@@ -113,7 +128,7 @@ if uploaded_files:
             df["Bulan"] = df["Tanggal"].dt.month.map(bulan_map)
             df["Tanggal"] = df["Tanggal"].dt.strftime("%d/%m/%Y")
 
-            #8) Tambah Kolom Deskripsi
+            # 9) Tambah Kolom Deskripsi
             df["Deskripsi"] = pd.Series(index=df.index, dtype="object")
 
             text_source = (
@@ -143,7 +158,7 @@ if uploaded_files:
             mask_pendapatan = df["Deskripsi"].isin(["Pendapatan", "Pendapatan Lain-lain"])
             df.loc[mask_pendapatan, "Nominal"] = df.loc[mask_pendapatan, "Nominal"] * -1
 
-            # 9) Buat kolom Overview dari Deskripsi
+            # 10) Buat kolom Overview dari Deskripsi
             mapping = {
                 "Pendapatan/Penjualan": ["Pendapatan"],
                 "Beban Pokok Pendapatan/COGS": [
@@ -160,7 +175,7 @@ if uploaded_files:
 
             df[["Deskripsi", "Overview"]].drop_duplicates().sort_values(["Overview", "Deskripsi"])
 
-            # 10) Susun kolom akhir
+            # 11) Susun kolom akhir
             final_cols = [
                 "Tanggal", "Tahun", "Bulan", "Overview", "Deskripsi",
                 "No Akun", "Nama Akun",
@@ -193,11 +208,19 @@ if uploaded_files:
 
             col_idx = df_final_all.columns.get_loc("Nominal")
             worksheet.set_column(col_idx, col_idx, 18, format_angka)
+
+        # Kondisi untuk filename berdasarkan jumlah periode yang diproses
+        if len(periode_list) == 1:
+            periode_str = periode_list[0]
+        else:            
+            periode_str = f"{periode_list[0]}-{periode_list[-1]}"
         
         st.download_button(
-            label="Download Hasil Cleaning",
+            label=f"Download {prefix}_{periode_str}_cleaned.xlsx",
             data=output.getvalue(),
-            file_name=f"{file_name_input}.xlsx",
+            file_name=f"{prefix}_{periode_str}_cleaned.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="download_cleaned_item_jurnal"
+            key="download_cleaned_item_jurnal",
+            icon=":material/download:",
+            type="primary"
         )
