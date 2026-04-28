@@ -6,56 +6,7 @@ from io import BytesIO
 
 st.title("Cleaning Laporan Laba Rugi")
 
-# st.markdown(
-#     ":blue-badge[:green[**Realisasi**]] adalah fitur untuk membersihkan data laporan laba rugi yang diupload oleh user. Fitur ini akan memproses file Excel yang diupload, mengekstrak informasi tahun dan bulan, serta mengkategorikan data berdasarkan aturan tertentu. Setelah proses selesai, user dapat mendownload hasilnya dalam format Excel dengan nama file yang sudah ditentukan sesuai dengan pilihan perusahaan, bulan, dan tahun."
-# )
-
-col1, col2, col3 = st.columns(3)
-    
-with col1:
-    perusahaan = st.selectbox(
-        "Pilih perusahaan",
-        ["BIMP", "BIMS", "BIMR", "KPNJ", "MUL"],
-        index=0
-    )
-
-with col2:
-    bulan = st.selectbox(
-        "Pilih periode bulan",
-        ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
-        "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
-    )
-
-with col3:
-    tahun = st.selectbox(
-        "Pilih periode tahun",
-        ["2025", "2026"]
-    )
-
-bulan_map = {
-    "Januari": "jan",
-    "Februari": "feb",
-    "Maret": "mar",
-    "April": "apr",
-    "Mei": "mei",
-    "Juni": "jun",
-    "Juli": "jul",
-    "Agustus": "agu",
-    "September": "sep",
-    "Oktober": "okt",
-    "November": "nov",
-    "Desember": "des"
-}
-
-tahun_short = tahun[-2:]
-
-file_name = f"{perusahaan.lower()}_{bulan_map[bulan]}{tahun_short}_cleaned.xlsx"
-
-st.markdown(
-    f"Nama file: :blue-badge[{file_name}]"
-)
-
-st.divider()
+st.write("Realisasi: data laporan laba rugi dari modul Accounting. File yang diupload harus dalam format Excel (.xlsx) dengan struktur: :green[perusahaan_periode], contoh: :green[bimp_des25.xlsx]")
 
 uploaded_files = st.file_uploader("Upload File Laporan Laba Rugi (Excel)", type=['xlsx'], accept_multiple_files=True)
 
@@ -64,28 +15,46 @@ if not uploaded_files:
 
 if uploaded_files:
     df_list = []
+    periode_list = []
     
+    pd.set_option("display.max_columns", None)
+
     with st.spinner("Sedang memproses..."):
         for uploaded_file in uploaded_files:
             # 1) Buka file Excel
-            df_tanggal = pd.read_excel(
-                uploaded_file,
-                header=None,
-                nrows=1
-            )
-
             df = pd.read_excel(uploaded_file, skiprows=1)
 
-            # 2) Ambil Tahun dan Bulan dari df_tanggal
-            text = df_tanggal.iloc[0, 1]
-            
-            parts = text.split()
+            # 2) Ambil Tahun dan Bulan dari nama file
+            file_name = uploaded_file.name  # contoh: bimp_des25.xlsx
+            file_name = file_name.replace(".xlsx", "").lower()
 
-            bulan_arr = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
-            tahun_arr = ["2025", "2026"]
-            
-            bulan = next((p.capitalize() for p in parts if p.capitalize() in bulan_arr), None)
-            tahun = next((int(p) for p in parts if p.isdigit() and p in tahun_arr), None)
+            parts = file_name.split("_")  # ["bimp", "des25"]
+
+            bulan_map = {
+                "jan": "Januari", "feb": "Februari", "mar": "Maret",
+                "apr": "April", "mei": "Mei", "jun": "Juni",
+                "jul": "Juli", "agu": "Agustus", "sep": "September",
+                "okt": "Oktober", "nov": "November", "des": "Desember"
+            }
+
+            bulan = None
+            tahun = None
+
+            # ambil bagian terakhir (des25)
+            last = parts[-1]
+            periode_list.append(last)
+
+            match = re.match(r"([a-z]{3})(\d{2})", last)
+            if match:
+                bulan_code = match.group(1)
+                tahun_code = match.group(2)
+
+                bulan = bulan_map.get(bulan_code[:3])  # ambil 3 huruf awal
+                tahun = int("20" + tahun_code) if len(tahun_code) == 2 else int(tahun_code)
+
+            if bulan is None or tahun is None:
+                st.warning(f"Gagal ekstrak bulan/tahun dari nama file: {file_name}. Pastikan format nama file benar.")
+                st.stop()
 
             # 3) Simpan baris yang tidak diawali dengan huruf
             df = df[~df[df.columns[0]].astype(str).str.match(r'^[^\d]+')]
@@ -141,6 +110,8 @@ if uploaded_files:
             # Hapus baris yang memiliki nilai kosong 
             df = df.dropna()
 
+            df = df[df["Overview"] != ""]
+
             df_list.append(df)
 
         # gabungkan semua
@@ -164,10 +135,16 @@ if uploaded_files:
             col_idx = df_final_all.columns.get_loc("Realisasi Biaya")
             worksheet.set_column(col_idx, col_idx, 18, format_angka)
         
+        # Kondisi untuk filename berdasarkan jumlah periode yang diproses
+        if len(periode_list) == 1:
+            periode_str = periode_list[0]
+        else:
+            periode_str = f"{periode_list[0]}-{periode_list[-1]}"
+
         st.download_button(
             label="Download Hasil Cleaning",
             data=output.getvalue(),
-            file_name=f"{file_name}.xlsx",
+            file_name=f"{parts[0]}_{periode_str}_cleaned.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             key="download_cleaned_realisasi"
         )
