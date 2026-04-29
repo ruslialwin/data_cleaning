@@ -5,7 +5,7 @@ from io import BytesIO
 
 st.title("Cleaning Laporan Laba Rugi")
 
-st.write("Realisasi: data laporan laba rugi dari modul Accounting. File yang diupload harus dalam format Excel (.xlsx) dengan struktur: :green[perusahaan_periode], contoh: :green[bimp_des25.xlsx]")
+st.write("*Realisasi*: data laporan laba rugi dari modul Accounting. File yang diupload harus dalam format Excel (.xlsx) dengan struktur: **:green[perusahaan_periode]**, contoh: **:green[bimp_des25.xlsx]**")
 
 uploaded_files = st.file_uploader("Upload File Laporan Laba Rugi (Excel)", type=['xlsx'], accept_multiple_files=True)
 
@@ -145,5 +145,7 @@ if uploaded_files:
             data=output.getvalue(),
             file_name=f"{parts[0]}_{periode_str}_cleaned.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="download_cleaned_realisasi"
+            key="download_cleaned_realisasi",
+            icon=":material/download:",
+            type="primary"
         )
