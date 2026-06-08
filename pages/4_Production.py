@@ -39,7 +39,7 @@ if uploaded_file:
         df["Tanggal"] = df["Tanggal"].replace(bulan_map, regex=True).str.strip()
         df["Tanggal"] = pd.to_datetime(df["Tanggal"], format="%d %B %Y")
         df["Tanggal"] = df["Tanggal"].dt.strftime("%d/%m/%Y")
-
+        
         # 5) Menambahkan kolom "Tahun", "Bulan", dan "Kapasitas Olah Maksimal"
         bulan_map = {
             1: 'Januari', 2: 'Februari', 3: 'Maret',
