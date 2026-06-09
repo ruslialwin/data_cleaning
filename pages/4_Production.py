@@ -171,7 +171,7 @@ elif source == "API":
 
             periode = start_dt.strftime("%d %b %y").lower() + " - " + end_dt.strftime("%d %b %y").lower()
 
-            filename=f"produksi_{company_map.get(company_id, company_id)}_{periode}.xlsx"
+            filename=f"produksi_{company_map.get(company_id, company_id)}_{periode}_cleaned.xlsx"
 
             st.caption(
                 f"Perusahaan: {company_map.get(company_id, company_id).upper()} | "
