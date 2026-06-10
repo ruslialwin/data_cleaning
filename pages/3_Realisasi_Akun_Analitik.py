@@ -9,7 +9,7 @@ st.title("Cleaning Item Jurnal")
 
 source = st.radio(
     "Sumber Data",
-    ["Upload File Excel", "API"],
+    ["Upload File Excel", "API", "API (terekam)"],
     horizontal=True
 )
 
@@ -338,6 +338,115 @@ elif source == "API":
             file_name=filename, 
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             key="download_cleaned_item_jurnal",
+            icon=":material/download:",
+            type="primary"
+        )
+
+elif source == "API (terekam)":
+    st.info(
+        "Data artikel jurnal diambil langsung dari API Dashboard. "
+        "Klik **Ambil Data Artikel Jurnal** untuk memuat data dan mengunduh hasil dalam format Excel (.xlsx). "
+        "Nama file akan dibuat otomatis berdasarkan perusahaan dan periode, misalnya "
+        "`item_jurnal_bimp_jan26-mei26_cleaned.xlsx`."
+    )
+
+    API_URL = "https://dashboard.mahkotagroup.com/api/dashboard/realisasi-akun-analitik-terekam"
+
+    if st.button("Ambil Data Artikel Jurnal"):
+        with st.spinner("Mengambil data dari API...."):
+            response = requests.get(API_URL)
+
+            if response.status_code != 200:
+                st.error(f"Gagal mengambil data. Status: {response.status_code}")
+                st.stop()
+
+            result = response.json()
+
+            # langsung pakai hasil transformasi dari API
+            df = pd.DataFrame(result["data"])
+
+            st.write(df.columns.tolist())
+
+            # Balik tanda nominal untuk Pendapatan dan Pendapatan Lain-lain
+            mask_pendapatan = df["Deskripsi"].isin(["Pendapatan", "Pendapatan Lain-lain"])
+            df.loc[mask_pendapatan, "Nominal"] = df.loc[mask_pendapatan, "Nominal"] * -1
+
+            # Susun kolom akhir
+            final_cols = [
+                "Tanggal", "Tahun", "Bulan", "Overview", "Deskripsi",
+                "No Akun", "Nama Akun",
+                "No Akun Analitik", "Nama Akun Analitik",
+                "Kode Induk Analitik", "Kode Detail Analitik", "Tipe Unit",
+                "Nominal"
+            ]
+
+            df = df[final_cols].copy()
+
+            # mengambil informasi id perusahaan dari respons API
+            company_id = result["config"]["context"]["allowed_company_ids"][0]
+
+            company_map = {
+                2: "mul",
+                4: "bimp",
+                5: "bimr",
+                6: "bims",
+                10: "kpnj"
+            }
+
+            # mengambil informasi periode dari respons API
+            custom_domain = result["config"]["customDomain"]
+
+            start_date = None
+            end_date = None
+
+            for item in custom_domain:
+                if isinstance(item, list):
+                    if item[0] == "date" and item[1] == ">=":
+                        start_date = item[2]
+
+                    if item[0] == "date" and item[1] == "<=":
+                        end_date = item[2]
+
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+
+            periode = start_dt.strftime("%d %b %y").lower() + " - " + end_dt.strftime("%d %b %y").lower()
+
+            filename=f"item_jurnal_terekam_{company_map.get(company_id, company_id)}_{periode}_cleaned.xlsx"
+
+            st.caption(
+                f"Perusahaan: {company_map.get(company_id, company_id).upper()} | "
+                f"Periode: {start_date} s.d. {end_date}"
+            )
+
+        st.success("Selesai!")
+        st.dataframe(df.head())
+
+        # Tombol Download
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False, sheet_name="Item Jurnal Cleaned")
+
+            workbook  = writer.book
+            worksheet = writer.sheets["Item Jurnal Cleaned"]
+
+            format_angka = workbook.add_format({
+                "num_format": '#,##0.00;(#,##0.00);-'
+            })
+            
+            col_idx = df.columns.get_loc("Nominal")
+            worksheet.set_column(col_idx, col_idx, 18, format_angka)
+
+        st.write("Company ID :", company_id)
+        st.write("Start Date :", start_date)
+        st.write("End Date :", end_date)
+
+        st.download_button(
+            label=f"Download Hasil Cleaning: {filename}",
+            data=output.getvalue(),
+            file_name=filename, 
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="download_cleaned_item_jurnal_terekam",
             icon=":material/download:",
             type="primary"
         )
