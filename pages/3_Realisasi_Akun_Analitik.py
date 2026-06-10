@@ -235,9 +235,9 @@ if source == "Upload File Excel":
 
 elif source == "API":
     st.info(
-        "Data artikel jurnal diambil langsung dari API Dashboard."
-        "Klik **Ambil Data Artikel Jurnal** untuk memuat data dan mengunduh hasil dalam format Excel (.xlsx)."
-        "Nama file akan dibuat otomatis berdasarkan perusahaan dan periode, misalnya"
+        "Data artikel jurnal diambil langsung dari API Dashboard. "
+        "Klik **Ambil Data Artikel Jurnal** untuk memuat data dan mengunduh hasil dalam format Excel (.xlsx). "
+        "Nama file akan dibuat otomatis berdasarkan perusahaan dan periode, misalnya "
         "`item_jurnal_bimp_jan26-mei26_cleaned.xlsx`."
     )
 
