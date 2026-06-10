@@ -337,7 +337,7 @@ elif source == "API":
             data=output.getvalue(),
             file_name=filename, 
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="download_cleaned_production",
+            key="download_cleaned_item_jurnal",
             icon=":material/download:",
             type="primary"
         )
