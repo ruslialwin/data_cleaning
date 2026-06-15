@@ -105,7 +105,20 @@ elif source == "API":
         "`prolab_bimp_jul25.xlsx`."
     )
 
-    API_URL = "https://dashboard.mahkotagroup.com/api/dashboard/processing-labour"
+    company_options = {
+    "BIMP": "https://dashboard.mahkotagroup.com/api/dashboard/processing-labour-bimp?mode=live",
+    "BIMR": "https://dashboard.mahkotagroup.com/api/dashboard/processing-labour-bimr?mode=live",
+    "BIMS": "https://dashboard.mahkotagroup.com/api/dashboard/processing-labour-bims?mode=live",
+    "MUL": "https://dashboard.mahkotagroup.com/api/dashboard/processing-labour-mul?mode=live",
+    "KPNJ": "https://dashboard.mahkotagroup.com/api/dashboard/processing-labour-kpnj?mode=live"
+    }
+
+    selected_company = st.selectbox(
+        "Pilih Perusahaan",
+        list(company_options.keys())
+    )
+
+    API_URL = company_options[selected_company]
 
     if st.button("Ambil Data Processing & Labour"):
         with st.spinner("Mengambil data dari API...."):
