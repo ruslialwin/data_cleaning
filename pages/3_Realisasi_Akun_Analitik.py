@@ -9,7 +9,7 @@ st.title("Cleaning Item Jurnal")
 
 source = st.radio(
     "Sumber Data",
-    ["Upload File Excel", "API", "API (terekam)"],
+    ["Upload File Excel", "API"],
     horizontal=True
 )
 
