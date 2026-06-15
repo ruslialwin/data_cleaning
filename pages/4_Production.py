@@ -110,7 +110,20 @@ elif source == "API":
         "`produksi_bimp_jul25.xlsx`."
     )
 
-    API_URL = "https://dashboard.mahkotagroup.com/api/dashboard/production"
+    company_options = {
+    "BIMP": "https://dashboard.mahkotagroup.com/api/dashboard/production-bimp?mode=live",
+    "BIMR": "https://dashboard.mahkotagroup.com/api/dashboard/production-bimr?mode=live",
+    "BIMS": "https://dashboard.mahkotagroup.com/api/dashboard/production-bims?mode=live",
+    "MUL": "https://dashboard.mahkotagroup.com/api/dashboard/production-mul?mode=live",
+    "KPNJ": "https://dashboard.mahkotagroup.com/api/dashboard/production-kpnj?mode=live"
+    }
+
+    selected_company = st.selectbox(
+        "Pilih Perusahaan",
+        list(company_options.keys())
+    )
+
+    API_URL = company_options[selected_company]
 
     if st.button("Ambil Data Produksi"):
         with st.spinner("Mengambil data dari API...."):
