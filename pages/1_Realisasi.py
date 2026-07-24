@@ -175,15 +175,27 @@ elif source == "API":
         ],
         "BIMR": [
             "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bimr-20250701-20251231",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bimr-20260101-20260630",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bimr-20260701-20261231"
         ],
         "BIMS": [
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bims-20250701-20250930"
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bims-20250701-20250930",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bims-20251001-20251231",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bims-20260101-20260331",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bims-20260401-20260630",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bims-20260701-20260930",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bims-20261001-20261231"
         ],
         "MUL": [
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-mul-20250701-20251231"
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-mul-20250701-20251231",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-mul-20260101-20260630",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-mul-20260701-20261231"
         ],
         "KPNJ": [
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-kpnj-20250701-20251231"
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-kpnj-20250701-20251231",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-kpnj-20260101-20260331",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-kpnj-20260401-20260630",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-kpnj-20260701-20261231"
         ]
     }
 
@@ -211,6 +223,10 @@ elif source == "API":
 
                 # langsung pakai hasil transformasi dari API
                 df = pd.DataFrame(result["data"])
+                
+                if df.empty:
+                    st.warning(f"Tidak ada data dari endpoint: {API_URL}")
+                    continue
 
                 # Balik tanda nominal untuk Pendapatan dan Pendapatan Lain-lain
                 mask_pendapatan = df["Deskripsi"].isin(["Pendapatan", "Pendapatan Lain-lain"])
