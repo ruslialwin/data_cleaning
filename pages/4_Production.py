@@ -87,7 +87,7 @@ if source == "Upload File Excel":
                 "num_format": '#,##0'
             })
             
-            columns = ["TBS diolah", "TBS olah After Grading", "Produksi CPO", "Produksi Kernel", "Kapasitas Olah Maksimal"]
+            columns = ["TBS Olah (Before)", "TBS Olah (After Grading)", "Produksi CPO", "Produksi Kernel", "Kapasitas Olah Maksimal"]
             for column in columns:
                 col_idx = df.columns.get_loc(column)
                 worksheet.set_column(col_idx, col_idx, 18, format_angka)
@@ -111,11 +111,11 @@ elif source == "API":
     )
 
     company_options = {
-    "BIMP": "https://dashboard.mahkotagroup.com/api/dashboard/production-bimp?mode=live",
-    "BIMR": "https://dashboard.mahkotagroup.com/api/dashboard/production-bimr?mode=live",
-    "BIMS": "https://dashboard.mahkotagroup.com/api/dashboard/production-bims?mode=live",
-    "MUL": "https://dashboard.mahkotagroup.com/api/dashboard/production-mul?mode=live",
-    "KPNJ": "https://dashboard.mahkotagroup.com/api/dashboard/production-kpnj?mode=live"
+    "BIMP": "https://dashboard.mahkotagroup.com/api/powerbi-feed/produksi-harian-bimp-20250701-20261231",
+    "BIMR": "https://dashboard.mahkotagroup.com/api/powerbi-feed/produksi-harian-bimr-20250701-20261231",
+    "BIMS": "https://dashboard.mahkotagroup.com/api/powerbi-feed/produksi-harian-bims-20250701-20261231",
+    "MUL": "https://dashboard.mahkotagroup.com/api/powerbi-feed/produksi-harian-mul-20250701-20261231",
+    "KPNJ": "https://dashboard.mahkotagroup.com/api/powerbi-feed/produksi-harian-kpnj-20250701-20261231"
     }
 
     selected_company = st.selectbox(
@@ -130,7 +130,7 @@ elif source == "API":
             response = requests.get(API_URL)
 
             if response.status_code != 200:
-                st.error(f"Gagal mengambil data. Status: {response.status_code}")
+                st.error(f"Gagal mengambil data dari {API_URL}. Status: {response.status_code}")
                 st.stop()
 
             result = response.json()
@@ -153,6 +153,13 @@ elif source == "API":
                 .str.rstrip("0")
                 .str.rstrip(".")
             )
+            
+            # Susun kolom akhir
+            final_cols = [
+                "Tanggal", "Tahun", "Bulan", "TBS Olah (Before)", "TBS Olah (After Grading)", "Produksi CPO", "Produksi Kernel", "Total Jam Operasi", "Kapasitas Olah Maksimal"
+            ]
+
+            df = df[final_cols].copy()
 
             # mengambil informasi id perusahaan dari respons API
             company_id = result["config"]["context"]["allowed_company_ids"][0]
@@ -206,7 +213,7 @@ elif source == "API":
                 "num_format": '#,##0'
             })
             
-            columns = ["TBS Diolah", "TBS olah After Grading", "Produksi CPO", "Produksi Kernel", "Kapasitas Olah Maksimal"]
+            columns = ["TBS Olah (Before)", "TBS Olah (After Grading)", "Produksi CPO", "Produksi Kernel", "Kapasitas Olah Maksimal"]
             for column in columns:
                 col_idx = df.columns.get_loc(column)
                 worksheet.set_column(col_idx, col_idx, 18, format_angka)
