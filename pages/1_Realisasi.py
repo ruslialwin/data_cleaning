@@ -168,11 +168,23 @@ elif source == "API":
     )
 
     company_options = {
-    "BIMP": "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bimp-20250701-20251231",
-    "BIMR": "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bimr-20250701-20251231",
-    "BIMS": "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bims-20250701-20250930",
-    "MUL": "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-mul-20250701-20251231",
-    "KPNJ": "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-kpnj-20250701-20251231"
+        "BIMP": [
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bimp-20250701-20251231",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bimp-20260101-20260630",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bimp-20260701-20261231"
+        ],
+        "BIMR": [
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bimr-20250701-20251231",
+        ],
+        "BIMS": [
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bims-20250701-20250930"
+        ],
+        "MUL": [
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-mul-20250701-20251231"
+        ],
+        "KPNJ": [
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-kpnj-20250701-20251231"
+        ]
     }
 
     selected_company = st.selectbox(
@@ -180,76 +192,90 @@ elif source == "API":
         list(company_options.keys())
     )
 
-    API_URL = company_options[selected_company]
+    API_URLS = company_options[selected_company]
 
     if st.button("Ambil Data Laba Rugi"):
         with st.spinner("Mengambil data dari API...."):
-            response = requests.get(API_URL)
+            df_list = []
+            start_dates = []
+            end_dates = []
+            
+            for API_URL in API_URLS:
+                response = requests.get(API_URL)
 
-            if response.status_code != 200:
-                st.error(f"Gagal mengambil data. Status: {response.status_code}")
-                st.stop()
+                if response.status_code != 200:
+                    st.error(f"Gagal mengambil data dari {API_URL}. Status: {response.status_code}")
+                    st.stop()
 
-            result = response.json()
+                result = response.json()
 
-            # langsung pakai hasil transformasi dari API
-            df = pd.DataFrame(result["data"])
+                # langsung pakai hasil transformasi dari API
+                df = pd.DataFrame(result["data"])
+
+                # Balik tanda nominal untuk Pendapatan dan Pendapatan Lain-lain
+                mask_pendapatan = df["Deskripsi"].isin(["Pendapatan", "Pendapatan Lain-lain"])
+                df.loc[mask_pendapatan, "Realisasi Biaya"] = df.loc[mask_pendapatan, "Realisasi Biaya"] * -1
+                
+                # Susun kolom akhir
+                final_cols = [
+                    "Tahun", "Bulan", "Overview", "Deskripsi", "No Akun", "Rincian Deskripsi", "Realisasi Biaya"
+                ]
+
+                df = df[final_cols].copy()
+                
+                df_list.append(df)
+
+                # mengambil informasi id perusahaan dari respons API
+                company_id = result["config"]["context"]["allowed_company_ids"][0]
+
+                company_map = {
+                    2: "mul",
+                    4: "bimp",
+                    5: "bimr",
+                    6: "bims",
+                    10: "kpnj"
+                }
+
+                # mengambil informasi periode dari respons API
+                custom_domain = result["config"]["customDomain"]
+
+                start_date = None
+                end_date = None
+
+                for item in custom_domain:
+                    if isinstance(item, list):
+                        if item[0] == "date" and item[1] == ">=":
+                            start_date = item[2]
+
+                        if item[0] == "date" and item[1] == "<=":
+                            end_date = item[2]
+                
+                start_dates.append(datetime.strptime(start_date, "%Y-%m-%d"))
+                end_dates.append(datetime.strptime(end_date, "%Y-%m-%d"))
 
             st.write(df.columns.tolist())
-
-            # Balik tanda nominal untuk Pendapatan dan Pendapatan Lain-lain
-            mask_pendapatan = df["Deskripsi"].isin(["Pendapatan", "Pendapatan Lain-lain"])
-            df.loc[mask_pendapatan, "Realisasi Biaya"] = df.loc[mask_pendapatan, "Realisasi Biaya"] * -1
-
-            # Susun kolom akhir
-            final_cols = [
-                "Tahun", "Bulan", "Overview", "Deskripsi", "No Akun", "Rincian Deskripsi", "Realisasi Biaya"
-            ]
-
-
-            df = df[final_cols].copy()
-
-
-            # mengambil informasi id perusahaan dari respons API
-            company_id = result["config"]["context"]["allowed_company_ids"][0]
-
-            company_map = {
-                2: "mul",
-                4: "bimp",
-                5: "bimr",
-                6: "bims",
-                10: "kpnj"
-            }
-
-            # mengambil informasi periode dari respons API
-            custom_domain = result["config"]["customDomain"]
-
-            start_date = None
-            end_date = None
-
-            for item in custom_domain:
-                if isinstance(item, list):
-                    if item[0] == "date" and item[1] == ">=":
-                        start_date = item[2]
-
-                    if item[0] == "date" and item[1] == "<=":
-                        end_date = item[2]
-
-            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+                
+            periode_awal = min(start_dates)
+            periode_akhir = max(end_dates)
             
-            if start_dt.strftime("%b").lower() == end_dt.strftime("%b").lower():
-                periode = start_dt.strftime("%b%y").lower()
+            if periode_awal.strftime("%b%y") == periode_akhir.strftime("%b%y"):
+                periode = periode_awal.strftime("%b%y").lower()
             else:
-                periode = start_dt.strftime("%b%y").lower() + "-" + end_dt.strftime("%b%y").lower()
-
+                periode = (
+                    periode_awal.strftime("%b%y").lower()
+                    + "-"
+                    + periode_akhir.strftime("%b%y").lower()
+                )
+            
             filename=f"{company_map.get(company_id, company_id)}_{periode}_terekam_cleaned.xlsx"
 
             st.caption(
                 f"Perusahaan: {company_map.get(company_id, company_id).upper()} | "
-                f"Periode: {start_date} s.d. {end_date}"
+                f"Periode: {periode_awal.strftime('%Y-%m-%d')} s.d. {periode_akhir.strftime('%Y-%m-%d')}"
             )
-
+                
+            df = pd.concat(df_list, ignore_index=True)
+                
         st.success("Selesai!")
         st.dataframe(df.head())
 
@@ -269,8 +295,8 @@ elif source == "API":
             worksheet.set_column(col_idx, col_idx, 18, format_angka)
 
         st.write("Company ID :", company_id)
-        st.write("Start Date :", start_date)
-        st.write("End Date :", end_date)
+        st.write("Start Date :", periode_awal.strftime('%Y-%m-%d'))
+        st.write("End Date :", periode_akhir.strftime('%Y-%m-%d'))
 
         st.download_button(
             label=f"Download Hasil Cleaning: {filename}",
