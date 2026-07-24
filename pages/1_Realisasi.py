@@ -333,11 +333,35 @@ elif source == "API (Harian)":
     )
 
     company_options = {
-    "BIMP": "https://dashboard.mahkotagroup.com/api/powerbi-feed/",
-    "BIMR": "https://dashboard.mahkotagroup.com/api/powerbi-feed/",
-    "BIMS": "https://dashboard.mahkotagroup.com/api/powerbi-feed/",
-    "MUL": "https://dashboard.mahkotagroup.com/api/powerbi-feed/",
-    "KPNJ": "https://dashboard.mahkotagroup.com/api/powerbi-feed/"
+        "BIMP": [
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-bimp-20250701-20251231",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-bimp-20260101-20260630",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-bimp-20260701-20261231"
+        ],
+        "BIMR": [
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-bimr-20250701-20251231",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-bimr-20260101-20260630",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-bimr-20260701-20261231"
+        ],
+        "BIMS": [
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-bims-20250701-20250930",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-bims-20251001-20251231",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-bims-20260101-20260331",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-bims-20260401-20260630",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-bims-20260701-20260930",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-bims-20261001-20261231"
+        ],
+        "MUL": [
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-mul-20250701-20251231",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-mul-20260101-20260630",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-mul-20260701-20261231"
+        ],
+        "KPNJ": [
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-kpnj-20250701-20251231",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-kpnj-20260101-20260331",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-kpnj-20260401-20260630",
+            "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-rugi-harian-kpnj-20260701-20261231"
+        ]
     }
 
     selected_company = st.selectbox(
@@ -345,77 +369,100 @@ elif source == "API (Harian)":
         list(company_options.keys())
     )
 
-    API_URL = company_options[selected_company]
+    API_URLS = company_options[selected_company]
 
-    if st.button("Ambil Data Laba Rugi"):
+    if st.button("Ambil Data Laba Rugi Harian"):
         with st.spinner("Mengambil data dari API...."):
-            response = requests.get(API_URL)
+            df_list = []
+            start_dates = []
+            end_dates = []
+            
+            for API_URL in API_URLS:
+                response = requests.get(API_URL)
 
-            if response.status_code != 200:
-                st.error(f"Gagal mengambil data. Status: {response.status_code}")
-                st.stop()
+                if response.status_code != 200:
+                    st.error(f"Gagal mengambil data. Status: {response.status_code}")
+                    st.stop()
 
-            result = response.json()
+                result = response.json()
 
-            # langsung pakai hasil transformasi dari API
-            df = pd.DataFrame(result["data"])
+                # langsung pakai hasil transformasi dari API
+                df = pd.DataFrame(result["data"])
+                
+                if df.empty:
+                    st.warning(f"Tidak ada data dari endpoint: {API_URL}")
+                    continue
+
+                # Balik tanda nominal untuk Pendapatan dan Pendapatan Lain-lain
+                mask_pendapatan = df["Deskripsi"].isin(["Pendapatan", "Pendapatan Lain-lain"])
+                df.loc[mask_pendapatan, "Realisasi Biaya"] = df.loc[mask_pendapatan, "Realisasi Biaya"] * -1
+
+                # format tanggal
+                df["Tanggal"] = pd.to_datetime(df["Tanggal"])
+                df["Tanggal"] = df["Tanggal"].dt.strftime("%d/%m/%Y")
+                
+                # Susun kolom akhir
+                final_cols = [
+                    "Tanggal", "Tahun", "Bulan", "Overview", "Deskripsi", "No Akun", "Rincian Deskripsi", "Realisasi Biaya"
+                ]
+
+                df = df[final_cols].copy()
+                
+                # df digabung ke dalam list
+                df_list.append(df)
+
+                # mengambil informasi id perusahaan dari respons API
+                company_id = result["config"]["context"]["allowed_company_ids"][0]
+
+                company_map = {
+                    2: "mul",
+                    4: "bimp",
+                    5: "bimr",
+                    6: "bims",
+                    10: "kpnj"
+                }
+
+                # mengambil informasi periode dari respons API
+                custom_domain = result["config"]["customDomain"]
+
+                start_date = None
+                end_date = None
+
+                for item in custom_domain:
+                    if isinstance(item, list):
+                        if item[0] == "date" and item[1] == ">=":
+                            start_date = item[2]
+
+                        if item[0] == "date" and item[1] == "<=":
+                            end_date = item[2]
+
+                start_dates.append(datetime.strptime(start_date, "%Y-%m-%d"))
+                end_dates.append(datetime.strptime(end_date, "%Y-%m-%d"))
+                
+                periode_awal = min(start_dates)
+                periode_akhir = max(end_dates)
+        
+                if periode_awal.strftime("%b%y") == periode_akhir.strftime("%b%y"):
+                    periode = periode_awal.strftime("%b%y").lower()
+                else:
+                    periode = (
+                        periode_awal.strftime("%b%y").lower()
+                        + "-"
+                        + periode_akhir.strftime("%b%y").lower()
+                )
 
             st.write(df.columns.tolist())
-
-            # Balik tanda nominal untuk Pendapatan dan Pendapatan Lain-lain
-            mask_pendapatan = df["Deskripsi"].isin(["Pendapatan", "Pendapatan Lain-lain"])
-            df.loc[mask_pendapatan, "Realisasi Biaya"] = df.loc[mask_pendapatan, "Realisasi Biaya"] * -1
-
-            # format tanggal
-            df["Tanggal"] = pd.to_datetime(df["Tanggal"])
-            df["Tanggal"] = df["Tanggal"].dt.strftime("%d/%m/%Y")
-
-            # Susun kolom akhir
-            final_cols = [
-                "Tanggal", "Tahun", "Bulan", "Overview", "Deskripsi", "No Akun", "Rincian Deskripsi", "Realisasi Biaya"
-            ]
-
-            df = df[final_cols].copy()
-
-            # mengambil informasi id perusahaan dari respons API
-            company_id = result["config"]["context"]["allowed_company_ids"][0]
-
-            company_map = {
-                2: "mul",
-                4: "bimp",
-                5: "bimr",
-                6: "bims",
-                10: "kpnj"
-            }
-
-            # mengambil informasi periode dari respons API
-            custom_domain = result["config"]["customDomain"]
-
-            start_date = None
-            end_date = None
-
-            for item in custom_domain:
-                if isinstance(item, list):
-                    if item[0] == "date" and item[1] == ">=":
-                        start_date = item[2]
-
-                    if item[0] == "date" and item[1] == "<=":
-                        end_date = item[2]
-
-            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
             
-            if start_dt.strftime("%b").lower() == end_dt.strftime("%b").lower():
-                periode = start_dt.strftime("%b%y").lower()
-            else:
-                periode = start_dt.strftime("%b%y").lower() + "-" + end_dt.strftime("%b%y").lower()
-
+            periode_awal = min(start_dates)
+            periode_akhir = max(end_dates)
+            
             filename=f"{company_map.get(company_id, company_id)}_{periode}_terekam_harian_cleaned.xlsx"
 
             st.caption(
                 f"Perusahaan: {company_map.get(company_id, company_id).upper()} | "
                 f"Periode: {start_date} s.d. {end_date}"
             )
+            df = pd.concat(df_list, ignore_index=True)
 
         st.success("Selesai!")
         st.dataframe(df.head())
@@ -436,8 +483,8 @@ elif source == "API (Harian)":
             worksheet.set_column(col_idx, col_idx, 18, format_angka)
 
         st.write("Company ID :", company_id)
-        st.write("Start Date :", start_date)
-        st.write("End Date :", end_date)
+        st.write("Start Date :", periode_awal.strftime('%Y-%m-%d'))
+        st.write("End Date :", periode_akhir.strftime('%Y-%m-%d'))
 
         st.download_button(
             label=f"Download Hasil Cleaning: {filename}",
