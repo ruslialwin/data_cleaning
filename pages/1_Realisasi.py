@@ -9,7 +9,7 @@ st.title("Cleaning Laporan Laba Rugi")
 
 source = st.radio(
     "Sumber Data",
-    ["Upload File Excel", "API"],
+    ["Upload File Excel", "API", "API (Harian)"],
     horizontal=True
 )
 
@@ -72,33 +72,33 @@ if source == "Upload File Excel":
                 df.insert(1, "Bulan", bulan)
                 df.insert(2, "Overview", "")
                 df.insert(3, "Deskripsi", "")
-                df.insert(4, "No. Akun", "")
+                df.insert(4, "No Akun", "")
                 df.columns.values[5] = "Rincian Deskripsi"
                 df.columns.values[6] = "Realisasi Biaya"
 
-                # 5) Pisah kolom "Rincian Deskripsi" menjadi "No. Akun" dan "Rincian Deskripsi"
-                df["No. Akun"] = df["Rincian Deskripsi"].str.extract(r'^([\d\.]+)')
+                # 5) Pisah kolom "Rincian Deskripsi" menjadi "No Akun" dan "Rincian Deskripsi"
+                df["No Akun"] = df["Rincian Deskripsi"].str.extract(r'^([\d\.]+)')
                 df["Rincian Deskripsi"] = df["Rincian Deskripsi"].str.replace(r'^([\d\.]+)\s*', '', regex=True)
                 
                 # 6) Kategorikan "Deskripsi" berdasarkan aturan yang diberikan
-                df.loc[df["No. Akun"].str.startswith("41"), "Deskripsi"] = "Pendapatan"
+                df.loc[df["No Akun"].str.startswith("41"), "Deskripsi"] = "Pendapatan"
 
                 df.loc[df["Rincian Deskripsi"].str.contains("Pembelian", case=False, na=False), "Deskripsi"] = "Pembelian"
                 df.loc[df["Rincian Deskripsi"].str.contains("Harga Pokok", case=False, na=False), "Deskripsi"] = "Persediaan Awal"
                 df.loc[df["Rincian Deskripsi"].str.contains("Transit", case=False, na=False), "Deskripsi"] = "Persediaan Akhir"
-                df.loc[df["No. Akun"].str.startswith("51.02"), "Deskripsi"] = "Biaya Pembelian"
-                df.loc[df["No. Akun"].str.startswith("51.03"), "Deskripsi"] = "Biaya Gaji"
-                df.loc[df["No. Akun"].str.startswith("52"), "Deskripsi"] = "Biaya Overhead"
+                df.loc[df["No Akun"].str.startswith("51.02"), "Deskripsi"] = "Biaya Pembelian"
+                df.loc[df["No Akun"].str.startswith("51.03"), "Deskripsi"] = "Biaya Gaji"
+                df.loc[df["No Akun"].str.startswith("52"), "Deskripsi"] = "Biaya Overhead"
 
-                df.loc[df["No. Akun"].str.startswith("62"), "Deskripsi"] = "Beban Penjualan"
+                df.loc[df["No Akun"].str.startswith("62"), "Deskripsi"] = "Beban Penjualan"
 
-                df.loc[df["No. Akun"].str.startswith("70"), "Deskripsi"] = "Beban Administrasi"
+                df.loc[df["No Akun"].str.startswith("70"), "Deskripsi"] = "Beban Administrasi"
 
-                df.loc[df["No. Akun"].str.startswith("80"), "Deskripsi"] = "Pendapatan Lain-lain"
-                df.loc[df["No. Akun"].eq("41.01.01.0000.11"), "Deskripsi"] = "Pendapatan Lain-lain"
+                df.loc[df["No Akun"].str.startswith("80"), "Deskripsi"] = "Pendapatan Lain-lain"
+                df.loc[df["No Akun"].eq("41.01.01.0000.11"), "Deskripsi"] = "Pendapatan Lain-lain"
 
-                df.loc[df["No. Akun"].str.startswith("81"), "Deskripsi"] = "Beban Lain-lain"
-                df.loc[df["No. Akun"].eq("81.07.00.0000.02"), "Deskripsi"] = "Pendapatan Lain-lain"
+                df.loc[df["No Akun"].str.startswith("81"), "Deskripsi"] = "Beban Lain-lain"
+                df.loc[df["No Akun"].eq("81.07.00.0000.02"), "Deskripsi"] = "Pendapatan Lain-lain"
 
                 # 7) Kategorikan "Overview" berdasarkan "Deskripsi"
                 df["Deskripsi"].astype(str)
@@ -168,11 +168,11 @@ elif source == "API":
     )
 
     company_options = {
-    "BIMP": "https://dashboard.mahkotagroup.com/api/dashboard/realisasi-bimp?mode=live",
-    "BIMR": "https://dashboard.mahkotagroup.com/api/dashboard/realisasi-bimr?mode=live",
-    "BIMS": "https://dashboard.mahkotagroup.com/api/dashboard/realisasi-bims?mode=live",
-    "MUL": "https://dashboard.mahkotagroup.com/api/dashboard/realisasi-mul?mode=live",
-    "KPNJ": "https://dashboard.mahkotagroup.com/api/dashboard/realisasi-kpnj?mode=live"
+    "BIMP": "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bimp-20250701-20251231",
+    "BIMR": "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bimr-20250701-20251231",
+    "BIMS": "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-bims-20250701-20250930",
+    "MUL": "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-mul-20250701-20251231",
+    "KPNJ": "https://dashboard.mahkotagroup.com/api/powerbi-feed/laba-dan-rugi-kpnj-20250701-20251231"
     }
 
     selected_company = st.selectbox(
@@ -203,7 +203,7 @@ elif source == "API":
 
             # Susun kolom akhir
             final_cols = [
-                "Tahun", "Bulan", "Overview", "Deskripsi", "No. Akun", "Rincian Deskripsi", "Realisasi Biaya"
+                "Tahun", "Bulan", "Overview", "Deskripsi", "No Akun", "Rincian Deskripsi", "Realisasi Biaya"
             ]
 
 
@@ -278,6 +278,131 @@ elif source == "API":
             file_name=filename, 
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             key="download_cleaned_realisasi_terekam",
+            icon=":material/download:",
+            type="primary"
+        )
+        
+elif source == "API (Harian)":
+    st.info(
+        "Data laporan laba rugi harian diambil langsung dari API Dashboard. "
+        "Klik **Ambil Data Laba Rugi Harian** untuk memuat data dan mengunduh hasil dalam format Excel (.xlsx). "
+        "Nama file akan dibuat otomatis berdasarkan perusahaan dan periode, misalnya "
+        "`harian_bimp_jul25.xlsx`."
+    )
+
+    company_options = {
+    "BIMP": "https://dashboard.mahkotagroup.com/api/powerbi-feed/",
+    "BIMR": "https://dashboard.mahkotagroup.com/api/powerbi-feed/",
+    "BIMS": "https://dashboard.mahkotagroup.com/api/powerbi-feed/",
+    "MUL": "https://dashboard.mahkotagroup.com/api/powerbi-feed/",
+    "KPNJ": "https://dashboard.mahkotagroup.com/api/powerbi-feed/"
+    }
+
+    selected_company = st.selectbox(
+        "Pilih Perusahaan",
+        list(company_options.keys())
+    )
+
+    API_URL = company_options[selected_company]
+
+    if st.button("Ambil Data Laba Rugi"):
+        with st.spinner("Mengambil data dari API...."):
+            response = requests.get(API_URL)
+
+            if response.status_code != 200:
+                st.error(f"Gagal mengambil data. Status: {response.status_code}")
+                st.stop()
+
+            result = response.json()
+
+            # langsung pakai hasil transformasi dari API
+            df = pd.DataFrame(result["data"])
+
+            st.write(df.columns.tolist())
+
+            # Balik tanda nominal untuk Pendapatan dan Pendapatan Lain-lain
+            mask_pendapatan = df["Deskripsi"].isin(["Pendapatan", "Pendapatan Lain-lain"])
+            df.loc[mask_pendapatan, "Realisasi Biaya"] = df.loc[mask_pendapatan, "Realisasi Biaya"] * -1
+
+            # format tanggal
+            df["Tanggal"] = pd.to_datetime(df["Tanggal"])
+            df["Tanggal"] = df["Tanggal"].dt.strftime("%d/%m/%Y")
+
+            # Susun kolom akhir
+            final_cols = [
+                "Tanggal", "Tahun", "Bulan", "Overview", "Deskripsi", "No Akun", "Rincian Deskripsi", "Realisasi Biaya"
+            ]
+
+            df = df[final_cols].copy()
+
+            # mengambil informasi id perusahaan dari respons API
+            company_id = result["config"]["context"]["allowed_company_ids"][0]
+
+            company_map = {
+                2: "mul",
+                4: "bimp",
+                5: "bimr",
+                6: "bims",
+                10: "kpnj"
+            }
+
+            # mengambil informasi periode dari respons API
+            custom_domain = result["config"]["customDomain"]
+
+            start_date = None
+            end_date = None
+
+            for item in custom_domain:
+                if isinstance(item, list):
+                    if item[0] == "date" and item[1] == ">=":
+                        start_date = item[2]
+
+                    if item[0] == "date" and item[1] == "<=":
+                        end_date = item[2]
+
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+            
+            if start_dt.strftime("%b").lower() == end_dt.strftime("%b").lower():
+                periode = start_dt.strftime("%b%y").lower()
+            else:
+                periode = start_dt.strftime("%b%y").lower() + "-" + end_dt.strftime("%b%y").lower()
+
+            filename=f"{company_map.get(company_id, company_id)}_{periode}_terekam_harian_cleaned.xlsx"
+
+            st.caption(
+                f"Perusahaan: {company_map.get(company_id, company_id).upper()} | "
+                f"Periode: {start_date} s.d. {end_date}"
+            )
+
+        st.success("Selesai!")
+        st.dataframe(df.head())
+
+        # Tombol Download
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False, sheet_name="Realisasi")
+
+            workbook  = writer.book
+            worksheet = writer.sheets["Realisasi"]
+
+            format_angka = workbook.add_format({
+                "num_format": '#,##0.00;(#,##0.00);-'
+            })
+            
+            col_idx = df.columns.get_loc("Realisasi Biaya")
+            worksheet.set_column(col_idx, col_idx, 18, format_angka)
+
+        st.write("Company ID :", company_id)
+        st.write("Start Date :", start_date)
+        st.write("End Date :", end_date)
+
+        st.download_button(
+            label=f"Download Hasil Cleaning: {filename}",
+            data=output.getvalue(),
+            file_name=filename, 
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="download_cleaned_realisasi_harian_terekam",
             icon=":material/download:",
             type="primary"
         )
