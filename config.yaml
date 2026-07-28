@@ -1,0 +1,10 @@
+credentials:
+  usernames:
+    mismg:
+      email: mismg@gmail.com
+      name: MIS MG
+      password: $2b$12$zsTESlnhrd34CTM35EXSGeqg2KDYx/v4J1jxECeYRuajrpso8Pq.m
+cookie:
+  expiry_days: 30
+  key: "odoo_cleaner_secret_key_26"
+  name: "auth_cookie"    
