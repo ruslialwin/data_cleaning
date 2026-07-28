@@ -35,4 +35,5 @@ def require_login():
 
     else:
         st.warning("Please login first")
+        st.switch_page("Home.py")
         st.stop()
