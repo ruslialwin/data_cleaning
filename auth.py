@@ -3,10 +3,8 @@ import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 
-
 def get_authenticator():
     if "authenticator" not in st.session_state:
-
         with open("config.yaml") as file:
             config = yaml.load(file, Loader=SafeLoader)
 
@@ -16,9 +14,7 @@ def get_authenticator():
             config["cookie"]["key"],
             config["cookie"]["expiry_days"],
         )
-
     return st.session_state.authenticator
-
 
 def require_login():
     authenticator = get_authenticator()
