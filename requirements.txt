@@ -3,3 +3,4 @@ pandas
 numpy
 openpyxl
 xlsxwriter
+streamlit-authenticator
