@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import requests
 from io import BytesIO
+from auth import require_login
+
+require_login()
 
 st.title("Get FFB Price Data")
 

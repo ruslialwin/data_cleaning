@@ -4,6 +4,9 @@ import numpy as np
 import requests
 from io import BytesIO
 from datetime import datetime
+from auth import require_login
+
+require_login()
 
 st.title("Cleaning Item Jurnal")
 
