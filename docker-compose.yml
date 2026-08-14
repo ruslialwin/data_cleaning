@@ -1,0 +1,10 @@
+services:
+  data-cleaning-tools:
+    image: data-cleaning-tools:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-cleaning-tools
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
