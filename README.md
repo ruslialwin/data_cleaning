@@ -12,6 +12,33 @@
 - **Pandas**: Untuk cleaning, transformasi, dan analisis data Excel Odoo.
 - **OpenPyXL / XlsxWriter**: Untuk membaca, memproses, dan export file Excel.
 - **NumPy**: Untuk operasi numerik dan manipulasi data.
+- **Docker**: Untuk containerization dan menjalankan aplikasi dalam environment yang konsisten.
+  
+## 🚀 Menjalankan Aplikasi
 
-## 🌐 Akses Aplikasi
+### 🌐 Streamlit Cloud
+
+Aplikasi dapat langsung diakses melalui:
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://odoo-data-cleaning.streamlit.app/)
+
+### 🐳 Docker
+
+Pastikan **Docker** sudah terinstall di komputer.
+
+#### 1. Clone repository
+
+```bash
+git clone https://github.com/ruslialwin/odoo-data-cleaning.git
+cd odoo-data-cleaning
+```
+
+#### 2. Docker Build
+
+```bash
+docker compose up --build
+```
+#### 3. Akses Aplikasi
+
+```bash
+http://localhost:8501
+```
