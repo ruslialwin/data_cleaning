@@ -10,9 +10,41 @@ require_login()
 
 st.title("Cleaning Item Jurnal")
 
+company_options = {
+    "BIMP": [
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bimp-20250701-20251231",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bimp-20260101-20260630",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bimp-20260701-20261231"
+    ],
+    "BIMR": [
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bimr-20250701-20251231",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bimr-20260101-20260630",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bimr-20260701-20261231"
+    ],
+    "BIMS": [
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bims-20250701-20250930",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bims-20251001-20251231",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bims-20260101-20260331",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bims-20260401-20260630",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bims-20260701-20260930",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bims-20261001-20261231"
+    ],
+    "MUL": [
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-mul-20250701-20251231",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-mul-20260101-20260630",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-mul-20260701-20261231"
+    ],
+    "KPNJ": [
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-kpnj-20250701-20251231",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-kpnj-20260101-20260331",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-kpnj-20260401-20260630",
+        "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-kpnj-20260701-20261231"
+    ]
+}
+
 source = st.radio(
     "Sumber Data",
-    ["Upload File Excel", "API"],
+    ["Upload File Excel", "API", "API - Custom Periode"],
     horizontal=True
 )
 
@@ -244,38 +276,6 @@ elif source == "API":
         "`item_jurnal_bimp_jan26-mei26_cleaned.xlsx`."
     )
 
-    company_options = {
-        "BIMP": [
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bimp-20250701-20251231",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bimp-20260101-20260630",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bimp-20260701-20261231"
-        ],
-        "BIMR": [
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bimr-20250701-20251231",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bimr-20260101-20260630",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bimr-20260701-20261231"
-        ],
-        "BIMS": [
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bims-20250701-20250930",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bims-20251001-20251231",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bims-20260101-20260331",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bims-20260401-20260630",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bims-20260701-20260930",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-bims-20261001-20261231"
-        ],
-        "MUL": [
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-mul-20250701-20251231",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-mul-20260101-20260630",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-mul-20260701-20261231"
-        ],
-        "KPNJ": [
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-kpnj-20250701-20251231",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-kpnj-20260101-20260331",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-kpnj-20260401-20260630",
-            "https://dashboard.mahkotagroup.com/api/powerbi-feed/realisasi-kpnj-20260701-20261231"
-        ]
-    }
-
     selected_company = st.selectbox(
         "Pilih Perusahaan",
         list(company_options.keys())
@@ -398,6 +398,151 @@ elif source == "API":
             file_name=filename, 
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             key="download_cleaned_item_jurnal_terekam",
+            icon=":material/download:",
+            type="primary"
+        )
+        
+elif source == "API - Custom Periode":
+    st.info(
+        "Data artikel jurnal diambil dari endpoint API yang sama, "
+        "kemudian difilter berdasarkan tanggal yang dipilih."
+    )
+
+    selected_company = st.selectbox(
+        "Pilih Perusahaan",
+        list(company_options.keys())
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        tanggal_mulai = st.date_input(
+            "Tanggal Mulai"
+        )
+
+    with col2:
+        tanggal_akhir = st.date_input(
+            "Tanggal Akhir"
+        )
+
+    if tanggal_mulai > tanggal_akhir:
+        st.error(
+            "Tanggal mulai tidak boleh lebih besar "
+            "dari tanggal akhir."
+        )
+        st.stop()
+
+    if st.button("Ambil Data Artikel Jurnal"):
+
+        API_URLS = company_options[selected_company]
+
+        with st.spinner("Mengambil data dari API..."):
+
+            df_list = []
+
+            for API_URL in API_URLS:
+
+                response = requests.get(API_URL)
+
+                if response.status_code != 200:
+                    st.error(
+                        f"Gagal mengambil data. "
+                        f"Status: {response.status_code}"
+                    )
+                    st.stop()
+
+                result = response.json()
+
+                df = pd.DataFrame(result["data"])
+
+                if df.empty:
+                    continue
+                
+                # Ubah tanggal
+                df["Tanggal"] = pd.to_datetime(
+                    df["Tanggal"],
+                    errors="coerce"
+                )
+
+                # filter sesuai input user
+                df = df[
+                    (df["Tanggal"].dt.date >= tanggal_mulai) &
+                    (df["Tanggal"].dt.date <= tanggal_akhir)
+                ].copy()
+                
+                if df.empty:
+                    continue
+
+                # Lanjutkan cleaning yang sudah ada
+                mask_pendapatan = df["Deskripsi"].isin([
+                    "Pendapatan",
+                    "Pendapatan Lain-lain"
+                ])
+
+                df.loc[mask_pendapatan, "Nominal"] *= -1
+
+                df["Tanggal"] = df["Tanggal"].dt.strftime(
+                    "%d/%m/%Y"
+                )
+
+                final_cols = [
+                    "Tanggal", "Tahun", "Bulan",
+                    "Overview", "Deskripsi",
+                    "No Akun", "Nama Akun",
+                    "No Akun Analitik",
+                    "Nama Akun Analitik",
+                    "Kode Induk Analitik",
+                    "Kode Detail Analitik",
+                    "Tipe Unit",
+                    "Nominal"
+                ]
+
+                df_list.append(df[final_cols].copy())
+
+            if not df_list:
+                st.warning(
+                    "Tidak ada data pada tanggal yang dipilih."
+                )
+                st.stop()
+
+            df = pd.concat(
+                df_list,
+                ignore_index=True
+            )
+
+        st.success("Selesai!")
+
+        st.dataframe(df.head())
+        
+        # Tombol Download
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False, sheet_name="Item Jurnal Cleaned")
+
+            workbook  = writer.book
+            worksheet = writer.sheets["Item Jurnal Cleaned"]
+
+            format_angka = workbook.add_format({
+                "num_format": '#,##0.00;(#,##0.00);-'
+            })
+            
+            col_idx = df.columns.get_loc("Nominal")
+            worksheet.set_column(col_idx, col_idx, 18, format_angka)
+
+        st.write("Company :", selected_company)
+        st.write("Start Date :", tanggal_mulai.strftime('%Y-%m-%d'))
+        st.write("End Date :", tanggal_akhir.strftime('%Y-%m-%d'))
+        
+        periode =tanggal_mulai.strftime("%d %b %y").lower() + " - " + tanggal_akhir.strftime("%d %b %y").lower()
+                    
+        filename=f"item_jurnal_terekam_{selected_company.lower()}_{periode}_cleaned.xlsx"
+
+        st.download_button(
+            label=f"Download Hasil Cleaning: {filename}",
+            data=output.getvalue(),
+            file_name=filename, 
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="download_cleaned_item_jurnal_terekam_custom",
             icon=":material/download:",
             type="primary"
         )
