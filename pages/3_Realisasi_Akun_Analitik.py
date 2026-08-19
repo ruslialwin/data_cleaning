@@ -401,7 +401,7 @@ elif source == "API":
             icon=":material/download:",
             type="primary"
         )
-        
+
 elif source == "API - Custom Periode":
     st.info(
         "Data artikel jurnal diambil dari endpoint API yang sama, "
