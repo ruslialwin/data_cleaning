@@ -431,8 +431,15 @@ elif source == "API - Custom Periode":
             "dari tanggal akhir."
         )
         st.stop()
-
+    
+    filter_undefined = st.checkbox(
+        "Hanya Tampilkan UNDEFINED",
+        value=True,
+        key="filter_undefined_custom"
+    )
+    
     if st.button("Ambil Data Artikel Jurnal"):
+        filter_undefined_value = st.session_state["filter_undefined_custom"]
 
         API_URLS = company_options[selected_company]
 
@@ -470,6 +477,11 @@ elif source == "API - Custom Periode":
                     (df["Tanggal"].dt.date <= tanggal_akhir)
                 ].copy()
                 
+                if filter_undefined:
+                    df = df[
+                        df["No Akun Analitik"].astype(str).str.strip().eq("UNDEFINED")
+                    ].copy()
+                
                 if df.empty:
                     continue
 
@@ -505,6 +517,12 @@ elif source == "API - Custom Periode":
                 )
                 st.stop()
 
+            if(filter_undefined):
+                st.info(
+                    "Hanya menampilkan baris dengan "
+                    "No Akun Analitik UNDEFINED."
+                )
+            
             df = pd.concat(
                 df_list,
                 ignore_index=True
@@ -534,8 +552,10 @@ elif source == "API - Custom Periode":
         st.write("End Date :", tanggal_akhir.strftime('%Y-%m-%d'))
         
         periode =tanggal_mulai.strftime("%d %b %y").lower() + " - " + tanggal_akhir.strftime("%d %b %y").lower()
-                    
-        filename=f"item_jurnal_terekam_{selected_company.lower()}_{periode}_cleaned.xlsx"
+        
+        suffix = "_undefined" if filter_undefined_value else ""
+    
+        filename=f"item_jurnal_terekam_{selected_company.lower()}_{periode}{suffix}.xlsx"
 
         st.download_button(
             label=f"Download Hasil Cleaning: {filename}",
