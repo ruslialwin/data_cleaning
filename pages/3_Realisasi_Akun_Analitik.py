@@ -551,7 +551,10 @@ elif source == "API - Custom Periode":
         st.write("Start Date :", tanggal_mulai.strftime('%Y-%m-%d'))
         st.write("End Date :", tanggal_akhir.strftime('%Y-%m-%d'))
         
-        periode =tanggal_mulai.strftime("%d %b %y").lower() + " - " + tanggal_akhir.strftime("%d %b %y").lower()
+        if (tanggal_mulai == tanggal_akhir):
+            periode = tanggal_mulai.strftime("%d %b %y").lower()
+        else:
+            periode = tanggal_mulai.strftime("%d %b %y").lower() + " - " + tanggal_akhir.strftime("%d %b %y").lower()
         
         suffix = "_undefined" if filter_undefined_value else ""
     
