@@ -123,7 +123,6 @@ if source == "Upload File Excel":
 
                 df = df[df["Overview"] != ""]
                 
-                 
                 cost_type_mapping = [
                     (
                         {
